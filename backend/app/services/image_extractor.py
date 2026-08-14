@@ -3,6 +3,8 @@ import httpx
 from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
+import re
+import os
 from app.models.schemas import ImageInfo
 from app.utils.url_utils import make_absolute, extract_filename
 from app.utils.logging_config import get_logger
@@ -29,7 +31,17 @@ def extract_images(soup: BeautifulSoup, url: str) -> list[ImageInfo]:
             continue
             
         absolute_url = make_absolute(url, src)
-        filename = extract_filename(absolute_url) or f"image_{idx}.jpg"
+        if absolute_url.startswith("data:"):
+            filename = f"image_{idx}"
+        else:
+            filename = extract_filename(absolute_url)
+            if not filename or filename == "unknown":
+                filename = f"image_{idx}"
+                
+        # Sanitize filename for Windows/Linux
+        filename = re.sub(r'[\\/*?:"<>|]', "", filename)
+        if len(filename) > 100:
+            filename = filename[-100:]
         
         caption = None
         figure = img.find_parent("figure")
@@ -88,22 +100,36 @@ async def download_images(images: list[ImageInfo], output_dir: str) -> list[Imag
                         pil_img = Image.open(BytesIO(response.content))
                         img.format = pil_img.format
                         img.width, img.height = pil_img.size
-                        
-                        local_path = os.path.join(output_dir, img.filename)
-                        pil_img.save(local_path)
-                        img.local_path = local_path
                     except Exception as e:
-                        logger.warning(f"Pillow failed for {img.absolute_url} (possibly SVG), saving raw bytes: {e}")
-                        local_path = os.path.join(output_dir, img.filename)
-                        with open(local_path, "wb") as f:
-                            f.write(response.content)
-                        img.local_path = local_path
-                        if img.filename.lower().endswith(".svg"):
-                            img.format = "SVG"
-                        elif img.filename.lower().endswith(".webp"):
-                            img.format = "WEBP"
-                        elif img.filename.lower().endswith(".gif"):
-                            img.format = "GIF"
+                        logger.warning(f"Pillow failed for {img.absolute_url}: {e}")
+                        content_type = response.headers.get("content-type", "").lower()
+                        if "svg" in content_type: img.format = "SVG"
+                        elif "webp" in content_type: img.format = "WEBP"
+                        elif "gif" in content_type: img.format = "GIF"
+                        elif "png" in content_type: img.format = "PNG"
+                        elif "jpeg" in content_type or "jpg" in content_type: img.format = "JPEG"
+                    
+                    ext = ""
+                    if img.format:
+                        ext = f".{img.format.lower()}"
+                        if ext == ".jpeg": ext = ".jpg"
+                        
+                    name, current_ext = os.path.splitext(img.filename)
+                    valid_exts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico']
+                    
+                    if ext:
+                        if not current_ext or current_ext.lower() not in valid_exts:
+                            img.filename = img.filename + ext
+                        elif current_ext.lower() != ext:
+                            img.filename = name + ext
+                    else:
+                        if not current_ext:
+                            img.filename = img.filename + ".bin"
+                            
+                    local_path = os.path.join(output_dir, img.filename)
+                    with open(local_path, "wb") as f:
+                        f.write(response.content)
+                    img.local_path = local_path
             except Exception as e:
                 logger.error(f"Failed to download image {img.absolute_url}: {e}")
                 

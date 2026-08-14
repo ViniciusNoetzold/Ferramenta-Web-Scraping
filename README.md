@@ -44,16 +44,16 @@ Você precisa iniciar o backend e o frontend simultaneamente (em terminais separ
 ```bash
 cd backend
 venv\Scripts\activate
-python -m uvicorn app.main:app --reload --port 8000
+python run.py
 ```
 
 **Iniciar o Frontend:**
 ```bash
 cd frontend
-npm run dev
+npm run dev -- -p 3006
 ```
 
-Após iniciar ambos, acesse o aplicativo em seu navegador no endereço: **http://localhost:3000**
+Após iniciar ambos, acesse o aplicativo em seu navegador no endereço: **http://localhost:3006**
 
 ## 📦 Funcionalidades
 - Extração de sites com renderização JS (Playwright)
