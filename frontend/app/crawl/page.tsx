@@ -21,7 +21,8 @@ export default function CrawlPage() {
       const res = await api.crawl(url, depth, 100);
       const crawlId = res.id;
       
-      const eventSource = new EventSource(`http://localhost:8000/api/crawl/${crawlId}/progress`);
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+      const eventSource = new EventSource(`${apiBase}/api/crawl/${crawlId}/progress`);
       eventSource.onmessage = async (event) => {
         const data: ProgressEvent = JSON.parse(event.data);
         setProgress(data.message);

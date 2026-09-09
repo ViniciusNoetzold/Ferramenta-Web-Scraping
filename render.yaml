@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: webarchiver-pro-mezzold
+    env: python
+    buildCommand: ./build.sh
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: PORT
+        value: 10000

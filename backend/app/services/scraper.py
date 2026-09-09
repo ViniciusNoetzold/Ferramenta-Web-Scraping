@@ -27,17 +27,23 @@ class ScraperEngine:
     # ── lifecycle ──────────────────────────────────────────────
     async def initialize(self) -> None:
         """Launch Playwright browser (call once at startup)."""
-        self._playwright = await async_playwright().start()
-        self._browser = await self._playwright.chromium.launch(headless=True)
-        logger.info("ScraperEngine initialized — Chromium launched")
+        try:
+            self._playwright = await async_playwright().start()
+            self._browser = await self._playwright.chromium.launch(headless=True)
+            logger.info("ScraperEngine initialized — Chromium launched")
+        except Exception as e:
+            logger.warning(f"ScraperEngine: Playwright browser launch failed or binary missing: {e}")
 
     async def close(self) -> None:
         """Shut down browser and Playwright."""
-        if self._browser:
-            await self._browser.close()
-        if self._playwright:
-            await self._playwright.stop()
-        logger.info("ScraperEngine closed")
+        try:
+            if self._browser:
+                await self._browser.close()
+            if self._playwright:
+                await self._playwright.stop()
+            logger.info("ScraperEngine closed")
+        except Exception as e:
+            logger.warning(f"ScraperEngine close error: {e}")
 
     # ── main scrape ────────────────────────────────────────────
     async def scrape(self, url: str, download_images: bool = True) -> dict:

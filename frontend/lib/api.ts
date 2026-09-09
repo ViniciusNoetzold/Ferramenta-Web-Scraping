@@ -115,7 +115,7 @@ export type ProgressEvent = {
   step: string;
 };
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export const api = {
   scrape: async (url: string, download_images: boolean = false, use_ai: boolean = false) => {

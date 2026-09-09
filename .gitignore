@@ -5,5 +5,7 @@ __pycache__/
 *.pyc
 output/
 backend/webarchiver.db
+*.db
+webarchiver.db
 .DS_Store
 .env
