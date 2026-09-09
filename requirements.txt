@@ -39,3 +39,8 @@ openai>=1.50.0
 # Utilities
 python-dateutil>=2.9.0
 validators>=0.34.0
+
+# Render / Server deployment
+gunicorn>=22.0.0
+a2wsgi>=1.10.0
+
