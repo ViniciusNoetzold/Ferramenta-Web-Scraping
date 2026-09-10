@@ -1,0 +1,32 @@
+services:
+  # Backend FastAPI
+  - type: web
+    name: webarchiver-backend
+    env: docker
+    region: ohio
+    plan: free
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      # Adicione aqui suas outras variáveis, como OPENAI_API_KEY
+      # NÃO coloque secrets hardcoded, configure pelo dashboard do Render
+      # para segurança ou use a opção "Sync from" do Render
+      - key: FRONTEND_URL
+        value: https://webarchiver-frontend.onrender.com
+        
+  # Frontend Next.js (Se estiver no mesmo repo)
+  - type: web
+    name: webarchiver-frontend
+    env: node
+    region: ohio
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://webarchiver-backend.onrender.com
