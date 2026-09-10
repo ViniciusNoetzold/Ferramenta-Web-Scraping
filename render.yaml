@@ -1,7 +1,7 @@
 services:
   # Backend FastAPI
   - type: web
-    name: webarchiver-backend
+    name: webarchiver-pro-mezzold
     env: docker
     region: ohio
     plan: free
@@ -9,7 +9,7 @@ services:
     dockerfilePath: Dockerfile
     envVars:
       - key: PORT
-        value: 8000
+        value: 10000
       - key: HOST
         value: 0.0.0.0
       # Adicione aqui suas outras variáveis, como OPENAI_API_KEY
@@ -29,4 +29,4 @@ services:
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: https://webarchiver-backend.onrender.com
+        value: https://webarchiver-pro-mezzold.onrender.com

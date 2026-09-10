@@ -44,6 +44,20 @@ export default function Home() {
       <section className="relative rounded-3xl overflow-hidden glass p-10 md:p-16 text-center animate-slide-up">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-violet-500/10 to-cyan-500/10 z-0"></div>
         <div className="relative z-10">
+          <div className="flex justify-center mb-4">
+            <a
+              href="https://mezzoldstudio.com.br/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-slate-700/80 bg-slate-900/80 hover:bg-slate-850 hover:border-slate-600 backdrop-blur-md shadow-xs transition-colors group cursor-pointer"
+              title="Mezzold Studio (mezzoldstudio.com.br)"
+            >
+              <img src="/mezzold-logo.png" alt="Mezzold Studio" className="w-3.5 h-3.5 object-contain opacity-80 group-hover:opacity-100 transition-opacity" />
+              <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-slate-400 group-hover:text-slate-200 font-semibold transition-colors">
+                [ MEZZOLD STUDIO ]
+              </span>
+            </a>
+          </div>
           <h2 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
             Arquive a Web <br/> com <span className="text-gradient">Precisão</span>
           </h2>
