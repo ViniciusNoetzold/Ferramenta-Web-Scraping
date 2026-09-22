@@ -1,3 +1,3 @@
-:HL["/_next/static/chunks/18v75-1o5-j91.css","style"]
+:HL["/_next/static/chunks/3qlhi6tbxcc5l.css","style"]
 :HL["/mezzold-logo.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"KwZH2NvjITbFxBL0zqjn4"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"MdUyznTer3Zfp8zTTS26V"}

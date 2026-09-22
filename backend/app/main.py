@@ -129,7 +129,7 @@ async def get_favicon():
 if (STATIC_DIR / "_next").exists():
     app.mount("/_next", StaticFiles(directory=str(STATIC_DIR / "_next")), name="next_static")
 
-@app.get("/{full_path:path}")
+@app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
 async def serve_spa(full_path: str):
     """Serve Next.js exported static frontend."""
     if full_path.startswith("api/") or full_path.startswith("files/"):
@@ -139,6 +139,12 @@ async def serve_spa(full_path: str):
     if file_path.is_file():
         return FileResponse(str(file_path))
     
+    # Support Next.js static export dynamic route /analysis/[id]
+    if full_path.startswith("analysis/"):
+        analysis_preview = STATIC_DIR / "analysis" / "preview.html"
+        if analysis_preview.is_file():
+            return FileResponse(str(analysis_preview))
+
     # Try .html extension (e.g. /crawl -> /crawl.html)
     html_file = STATIC_DIR / f"{full_path}.html"
     if html_file.is_file():

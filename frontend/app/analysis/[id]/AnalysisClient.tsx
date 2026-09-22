@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 /* ═══════════════════════════════════════════════════════════ */
 /* ANALYSIS PAGE                                              */
 export default function AnalysisPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [data, setData] = useState<ScrapeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("texto");
@@ -17,6 +18,23 @@ export default function AnalysisPage() {
   const [lightbox, setLightbox] = useState<ImageInfo | null>(null);
   const [jsonCopied, setJsonCopied] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
+
+  /* ── resolve analysis ID (supporting Next.js static export fallback) ── */
+  useEffect(() => {
+    let resolvedId = typeof params?.id === "string" ? params.id : "";
+    if (!resolvedId || resolvedId === "preview") {
+      if (typeof window !== "undefined") {
+        const parts = window.location.pathname.split("/").filter(Boolean);
+        const last = parts[parts.length - 1];
+        if (last && last !== "preview" && last !== "analysis") {
+          resolvedId = last;
+        }
+      }
+    }
+    if (resolvedId) {
+      setActiveId(resolvedId);
+    }
+  }, [params]);
 
   /* ── poll until complete ─────────────────────────────────── */
   const pollScrape = useCallback(async (analysisId: string) => {
@@ -37,10 +55,10 @@ export default function AnalysisPage() {
   }, []);
 
   useEffect(() => {
-    if (typeof id === "string") {
-      pollScrape(id);
+    if (activeId) {
+      pollScrape(activeId);
     }
-  }, [id, pollScrape]);
+  }, [activeId, pollScrape]);
 
   /* ── loading state ──────────────────────────────────────── */
   if (loading) {
@@ -88,10 +106,11 @@ export default function AnalysisPage() {
   };
 
   const handleExport = async (format: string) => {
-    if (!id || typeof id !== "string") return;
+    const exportId = activeId || (typeof params?.id === "string" ? params.id : null);
+    if (!exportId) return;
     setExporting(format);
     try {
-      const res = await api.exportAnalysis(id, format);
+      const res = await api.exportAnalysis(exportId, format);
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
       window.open(`${apiBase}${res.download_url}`, "_blank");
     } catch (err) {
@@ -123,6 +142,17 @@ export default function AnalysisPage() {
           )}
         </div>
       </div>
+
+      {/* ── Error Banner ──────────────────────────────── */}
+      {data.status === "error" && (
+        <div className="glass p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 text-sm flex items-center gap-3">
+          <span className="text-xl">⚠️</span>
+          <div>
+            <p className="font-semibold text-red-200">Falha na extração</p>
+            <p className="text-xs text-red-300/80">{data.error || "Ocorreu um erro ao processar o scraping desta URL."}</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Stats row ────────────────────────────────── */}
       {data.stats && (

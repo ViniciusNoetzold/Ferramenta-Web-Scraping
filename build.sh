@@ -10,8 +10,8 @@ pip install -r requirements.txt
 echo "==> Installing Playwright Chromium browser..."
 playwright install chromium || true
 
-# If static assets need to be refreshed from frontend
-if [ -d "frontend" ] && [ ! -d "backend/static/_next" ]; then
+# If frontend directory and npm are available, compile frontend
+if [ -d "frontend" ] && command -v npm &> /dev/null; then
   echo "==> Building frontend..."
   cd frontend
   npm install

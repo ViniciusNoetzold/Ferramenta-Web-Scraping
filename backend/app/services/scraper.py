@@ -2,6 +2,7 @@
 
 import asyncio
 from typing import Dict, Any, Optional
+import httpx
 from playwright.async_api import async_playwright, Playwright, Browser
 from app.models.schemas import PageStats
 from app.services.parser import parse_content, build_structure_tree, extract_text, to_markdown, to_clean_html
@@ -29,10 +30,23 @@ class ScraperEngine:
         """Launch Playwright browser (call once at startup)."""
         try:
             self._playwright = await async_playwright().start()
-            self._browser = await self._playwright.chromium.launch(headless=True)
+            self._browser = await self._playwright.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--no-first-run",
+                    "--no-zygote",
+                    "--single-process",
+                    "--disable-extensions",
+                ]
+            )
             logger.info("ScraperEngine initialized — Chromium launched")
         except Exception as e:
             logger.warning(f"ScraperEngine: Playwright browser launch failed or binary missing: {e}")
+            self._browser = None
 
     async def close(self) -> None:
         """Shut down browser and Playwright."""
@@ -63,23 +77,35 @@ class ScraperEngine:
                 await asyncio.sleep(delay)
 
             # 3. load page
-            if not self._browser:
-                await self.initialize()
+            html = None
+            if self._browser:
+                try:
+                    context = await self._browser.new_context(
+                        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 WebArchiverPro/1.0",
+                        viewport={"width": 1280, "height": 900},
+                    )
+                    page = await context.new_page()
+                    try:
+                        await page.goto(url, wait_until="networkidle", timeout=settings.REQUEST_TIMEOUT * 1000)
+                        html = await page.content()
+                    finally:
+                        await context.close()
+                except Exception as exc:
+                    logger.warning("Playwright navigation error for %s (%s). Attempting HTTP fallback.", url, exc)
+                    html = None
 
-            context = await self._browser.new_context(
-                user_agent="WebArchiverPro/1.0",
-                viewport={"width": 1280, "height": 900},
-            )
-            page = await context.new_page()
-
-            try:
-                await page.goto(url, wait_until="networkidle", timeout=settings.REQUEST_TIMEOUT * 1000)
-                html = await page.content()
-            except Exception as exc:
-                logger.error("Failed to load %s: %s", url, exc)
-                raise
-            finally:
-                await context.close()
+            # Fallback to direct HTTP fetch if Playwright is unavailable or failed
+            if not html:
+                logger.info("Using HTTP client fallback for %s", url)
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 WebArchiverPro/1.0",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+                }
+                async with httpx.AsyncClient(follow_redirects=True, headers=headers, timeout=float(settings.REQUEST_TIMEOUT)) as client:
+                    resp = await client.get(url)
+                    resp.raise_for_status()
+                    html = resp.text
 
             # 4. parse
             soup = BeautifulSoup(html, "lxml")

@@ -1,8 +1,15 @@
-FROM mcr.microsoft.com/playwright/python:v1.48.0-jammy
+# Multi-stage Dockerfile for WebArchiver Pro by Mezzold Studio
+FROM node:20-alpine AS frontend-builder
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
 
+FROM mcr.microsoft.com/playwright/python:v1.48.0-jammy
 WORKDIR /app
 
-# Instala bibliotecas do sistema exigidas pelo WeasyPrint e Playwright
+# System dependencies for WeasyPrint and Playwright
 RUN apt-get update && apt-get install -y \
     build-essential \
     python3-dev \
@@ -18,17 +25,12 @@ RUN apt-get update && apt-get install -y \
     shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Garante a instalação do chromium e dependências do sistema
 RUN playwright install --with-deps chromium || playwright install chromium
 
-COPY . .
+COPY backend/ ./
+COPY --from=frontend-builder /frontend/out ./static
 
-# Expõe a porta que o Render vai injetar ou a 8000 de fallback
 EXPOSE 8000
-
-# Executa o servidor na porta configurada nas variáveis de ambiente e no host 0.0.0.0
 CMD ["python", "run.py"]
